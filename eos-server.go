@@ -15,13 +15,25 @@ func main() {
 	serverLog.Info("Starting EOS server");
 
 	// Building stats
+	var timerSec time.Duration
+	timerSec = 5
 	stats := eos.RuntimeStatistics{}
 	go func() {
-		for _ = range time.Tick(5 * time.Second) {
+
+		var last int64
+		last = 0
+
+		for _ = range time.Tick(timerSec * time.Second) {
+
+			rps := float32(stats.UdpPackets.Value - last) / float32(timerSec)
+
+			last = stats.UdpPackets.Value
+
 			serverLog.Debugc(
-				"Goroutines :gor, Udp served :us - :uec - :uep - :uea",
+				"Goroutines :gor, Udp served :us ( :rps RPS ) - :uec - :uep - :uea",
 				map[string]interface{}{
 					"gor":	runtime.NumGoroutine(),
+					"rps":  rps,
 					"us": 	stats.UdpPackets.Value,
 					"uec":	stats.UdpErrorConn.Value,
 					"uep":	stats.UdpErrorParse.Value,
