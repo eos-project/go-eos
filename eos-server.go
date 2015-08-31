@@ -19,18 +19,15 @@ func main() {
 	timerSec = 5
 	stats := eos.RuntimeStatistics{}
 	go func() {
-
 		var last int64
 		last = 0
 
 		for _ = range time.Tick(timerSec * time.Second) {
-
 			rps := float32(stats.UdpPackets.Value - last) / float32(timerSec)
-
 			last = stats.UdpPackets.Value
 
 			serverLog.Debugc(
-				"Goroutines :gor, Udp served :us ( :rps RPS ) - :uec - :uep - :uea",
+				"Goroutines :gor, Udp served :us (:rps RPS) - :uec - :uep - :uea",
 				map[string]interface{}{
 					"gor":	runtime.NumGoroutine(),
 					"rps":  rps,
