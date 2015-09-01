@@ -17,4 +17,6 @@ type RuntimeStatistics struct {
 	UdpErrorConn	StatCounter
 	UdpErrorParse	StatCounter
 	UdpErrorAuth	StatCounter
+
+	ActiveListeners	int
 }

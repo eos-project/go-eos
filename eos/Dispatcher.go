@@ -10,8 +10,10 @@ type node struct {
 }
 
 type Dispatcher struct {
-	m 		sync.Mutex
-	first 	*node
+	m 			sync.Mutex
+	first 		*node
+	count 		int
+	StatCount 	func(int)
 }
 
 func (d *Dispatcher) Register(f func(Message)) {
@@ -19,8 +21,10 @@ func (d *Dispatcher) Register(f func(Message)) {
 
 	d.m.Lock()
 	defer d.m.Unlock()
+	d.count++
 	node.next = d.first
 	d.first = node
+	go d.StatCount(d.count)
 }
 
 func (d *Dispatcher) Unregister(f func(Message)) {
@@ -33,18 +37,20 @@ func (d *Dispatcher) Unregister(f func(Message)) {
 		return
 	} else if &d.first.f == &f {
 		// Removing first node
+		d.count--
 		d.first = d.first.next
-	}
+	} else {
+		// Middle check
+		x := d.first
+		for x != nil {
+			if x.next != nil && &x.next.f == &f {
+				x.next = x.next.next
+			}
 
-	// Middle check
-	x := d.first
-	for x != nil {
-		if x.next != nil && &x.next.f == &f {
-			x.next = x.next.next
+			x = x.next
 		}
-
-		x = x.next
 	}
+	go d.StatCount(d.count)
 }
 
 func (d *Dispatcher) Send(message Message) {

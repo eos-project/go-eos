@@ -12,6 +12,7 @@ type UdpServer struct {
 	config 	UdpServerConfiguration
 	address *net.UDPAddr
 	socket 	*net.UDPConn
+	running bool
 }
 
 type UdpServerConfiguration struct {
@@ -59,7 +60,7 @@ func NewUdpServer(cnf UdpServerConfiguration) (*UdpServer, error) {
 	return &s, nil
 }
 
-func (u *UdpServer) Start() {
+func (u *UdpServer) Start() error {
 	var err error
 
 	udpLog.Infoc(
@@ -73,11 +74,13 @@ func (u *UdpServer) Start() {
 
 	u.socket, err = net.ListenUDP("udp", u.address);
 	if err != nil {
-		panic(udpLog.Fail(err))
+		udpLog.Fail(err)
+		return err
 	}
 
+	u.running = true
 	go func() {
-		for {
+		for u.running {
 			buf := make([]byte, u.config.PacketSize)
 			rlen, _, err := u.socket.ReadFromUDP(buf)
 			u.config.StatServe()
@@ -88,6 +91,14 @@ func (u *UdpServer) Start() {
 			}
 		}
 	} ()
+
+	return nil
+}
+
+func (u *UdpServer) Stop() {
+	udpLog.Info("Closing UDP listener")
+	u.running = false
+	u.socket.Close()
 }
 
 func (u *UdpServer) accept(packet string) {

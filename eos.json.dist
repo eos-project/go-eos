@@ -1,0 +1,19 @@
+{
+  "timer": 5,
+  "udp": {
+    "enabled": true,
+    "address": ":8087",
+    "packetSize": 8192,
+    "bufferSize": 8388608
+  },
+  "http": {
+    "enabled": true,
+    "stats": true,
+    "address": ":8090"
+  },
+  "realms": {
+    "test": "test",
+    "guest": "guest",
+    "xxx": "yyy"
+  }
+}
