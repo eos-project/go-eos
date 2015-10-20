@@ -1,4 +1,8 @@
+# Development
+idea/
+*.swp
 
-# Binaries
-
+# Binaries & runtime
 eos-server
+eos.json
+nohup.out
