@@ -1,9 +1,9 @@
 package eos
 
 import (
-	"fmt"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 )
 
 /// Named type for hash map identities
@@ -14,7 +14,7 @@ func NewHashMapIdentities() HashMapIdentities {
 	var x HashMapIdentities
 
 	x = map[string]string{}
-	return x;
+	return x
 }
 
 /// Adds new auth data
@@ -37,5 +37,5 @@ func (ids HashMapIdentities) AuthenticatePacket(p Packet) error {
 		return fmt.Errorf("Wrong signature for %s", p.Realm)
 	}
 
-	return nil;
+	return nil
 }

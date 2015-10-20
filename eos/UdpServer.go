@@ -1,33 +1,33 @@
 package eos
 
 import (
+	"github.com/gotterdemarung/go-log/log"
 	"net"
 	"strings"
-	"github.com/gotterdemarung/go-log/log"
 )
 
 var udpLog = log.Context.WithTags("eos", "udp")
 
 type UdpServer struct {
-	config 	UdpServerConfiguration
+	config  UdpServerConfiguration
 	address *net.UDPAddr
-	socket 	*net.UDPConn
+	socket  *net.UDPConn
 	running bool
 }
 
 type UdpServerConfiguration struct {
-	Address				string
-	PacketSize			int
-	BufferSize			int
+	Address    string
+	PacketSize int
+	BufferSize int
 
-	StatServe 			func()
-	StatErrorConnect	func()
-	StatErrorParse		func()
-	StatErrorAuth		func()
+	StatServe        func()
+	StatErrorConnect func()
+	StatErrorParse   func()
+	StatErrorAuth    func()
 
-	ParseKey			func(string) (*EosKey, error)
-	Send 				func(Message)
-	Authenticate		func(Packet) error
+	ParseKey     func(string) (*EosKey, error)
+	Send         func(Message)
+	Authenticate func(Packet) error
 }
 
 func NewUdpServer(cnf UdpServerConfiguration) (*UdpServer, error) {
@@ -48,13 +48,13 @@ func NewUdpServer(cnf UdpServerConfiguration) (*UdpServer, error) {
 		s.config.BufferSize = 1024 * 1024 * 4
 	}
 	if s.config.StatErrorConnect == nil {
-		s.config.StatErrorConnect = func(){}
+		s.config.StatErrorConnect = func() {}
 	}
 	if s.config.StatErrorParse == nil {
-		s.config.StatErrorParse = func(){}
+		s.config.StatErrorParse = func() {}
 	}
 	if s.config.StatErrorAuth == nil {
-		s.config.StatErrorAuth = func(){}
+		s.config.StatErrorAuth = func() {}
 	}
 
 	return &s, nil
@@ -65,14 +65,14 @@ func (u *UdpServer) Start() error {
 
 	udpLog.Infoc(
 		"Lisening UDP at :addr, max packet size :mpsize, incoming buffer size :ibsize",
-		map[string]interface{} {
-			"addr": 	u.config.Address,
-			"mpsize": 	u.config.PacketSize,
-			"ibsize":	u.config.BufferSize,
+		map[string]interface{}{
+			"addr":   u.config.Address,
+			"mpsize": u.config.PacketSize,
+			"ibsize": u.config.BufferSize,
 		},
 	)
 
-	u.socket, err = net.ListenUDP("udp", u.address);
+	u.socket, err = net.ListenUDP("udp", u.address)
 	if err != nil {
 		udpLog.Fail(err)
 		return err
@@ -90,7 +90,7 @@ func (u *UdpServer) Start() error {
 				go u.accept(string(buf[0:rlen]))
 			}
 		}
-	} ()
+	}()
 
 	return nil
 }
@@ -109,9 +109,9 @@ func (u *UdpServer) accept(packet string) {
 		return
 	}
 
-	nonce 		:= chunks[0]
-	signature	:= chunks[1]
-	keyString 	:= chunks[2]
+	nonce := chunks[0]
+	signature := chunks[1]
+	keyString := chunks[2]
 
 	// Resolving key
 	key, err := u.config.ParseKey(keyString)

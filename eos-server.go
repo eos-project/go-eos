@@ -1,21 +1,21 @@
 package main
 
 import (
-	"time"
+	"github.com/eos-project/go-eos/eos"
+	cf "github.com/gotterdemarung/go-configfile"
+	"github.com/gotterdemarung/go-log/log"
 	"os"
 	"os/signal"
-	"syscall"
 	"runtime"
-	"github.com/gotterdemarung/go-log/log"
-	cf "github.com/gotterdemarung/go-configfile"
-  	"github.com/eos-project/go-eos/eos"
+	"syscall"
+	"time"
 )
 
 func main() {
 	serverLog := log.Context.WithTags("eos")
 	log.Dispatcher.FromCli()
 
-	serverLog.Infoc("Starting EOS server with pid :pid", map[string]interface{}{"pid": os.Getpid()});
+	serverLog.Infoc("Starting EOS server with pid :pid", map[string]interface{}{"pid": os.Getpid()})
 
 	// Loading configuration file
 	confFile, err := cf.NewConfigFile("eos.json", true)
@@ -25,17 +25,17 @@ func main() {
 	serverLog.Infoc("Using config at :full", map[string]interface{}{"full": confFile.FullPath})
 
 	var mainConfig struct {
-		Timer int
+		Timer  int
 		Realms map[string]string
-		Udp struct {
-			Enabled bool
-			Address string
+		Udp    struct {
+			Enabled    bool
+			Address    string
 			PacketSize int
 			BufferSize int
 		}
 		Http struct {
 			Enabled bool
-			Stats bool
+			Stats   bool
 			Address string
 		}
 	}
@@ -54,26 +54,26 @@ func main() {
 		last = 0
 
 		for _ = range statsTicker.C {
-			rps := float32(stats.UdpPackets.Value - last) / float32(mainConfig.Timer)
+			rps := float32(stats.UdpPackets.Value-last) / float32(mainConfig.Timer)
 			last = stats.UdpPackets.Value
 
 			serverLog.Debugc(
 				"Goroutines :gor, Udp served :us (:rps RPS) - :uec - :uep - :uea",
 				map[string]interface{}{
-					"gor":	runtime.NumGoroutine(),
-					"rps":  rps,
-					"us": 	stats.UdpPackets.Value,
-					"uec":	stats.UdpErrorConn.Value,
-					"uep":	stats.UdpErrorParse.Value,
-					"uea":	stats.UdpErrorAuth.Value,
+					"gor": runtime.NumGoroutine(),
+					"rps": rps,
+					"us":  stats.UdpPackets.Value,
+					"uec": stats.UdpErrorConn.Value,
+					"uep": stats.UdpErrorParse.Value,
+					"uea": stats.UdpErrorAuth.Value,
 				},
 			)
 		}
 	}()
 
-  	// Building authenticator
+	// Building authenticator
 	auth := eos.NewHashMapIdentities()
-	for k,v := range mainConfig.Realms {
+	for k, v := range mainConfig.Realms {
 		auth.Add(k, v)
 		serverLog.Debugc("Added identity :name", map[string]interface{}{"name": k})
 	}
@@ -87,19 +87,19 @@ func main() {
 
 	// UdpConfig
 	udpConf := eos.UdpServerConfiguration{
-		Address:		mainConfig.Udp.Address,
+		Address: mainConfig.Udp.Address,
 
-		ParseKey:		eos.ParseKey,
-		Authenticate:	auth.AuthenticatePacket,
-		Send:			dispatcher.Send,
+		ParseKey:     eos.ParseKey,
+		Authenticate: auth.AuthenticatePacket,
+		Send:         dispatcher.Send,
 
-		BufferSize:			mainConfig.Udp.BufferSize,
-		PacketSize:			mainConfig.Udp.PacketSize,
+		BufferSize: mainConfig.Udp.BufferSize,
+		PacketSize: mainConfig.Udp.PacketSize,
 
-		StatServe:			stats.UdpPackets.Inc,
-		StatErrorAuth:  	stats.UdpErrorAuth.Inc,
-		StatErrorConnect:	stats.UdpErrorConn.Inc,
-		StatErrorParse:		stats.UdpErrorParse.Inc,
+		StatServe:        stats.UdpPackets.Inc,
+		StatErrorAuth:    stats.UdpErrorAuth.Inc,
+		StatErrorConnect: stats.UdpErrorConn.Inc,
+		StatErrorParse:   stats.UdpErrorParse.Inc,
 	}
 
 	// Signals dispatchering
@@ -157,6 +157,6 @@ func main() {
 	// Add demo listener
 	dispatcher.Register(eos.NoopMessage)
 
-	<- done
+	<-done
 	os.Exit(1)
 }

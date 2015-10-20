@@ -13,10 +13,10 @@ func (s *StatCounter) Inc() {
 }
 
 type RuntimeStatistics struct {
-	UdpPackets 		StatCounter
-	UdpErrorConn	StatCounter
-	UdpErrorParse	StatCounter
-	UdpErrorAuth	StatCounter
+	UdpPackets    StatCounter
+	UdpErrorConn  StatCounter
+	UdpErrorParse StatCounter
+	UdpErrorAuth  StatCounter
 
-	ActiveListeners	int
+	ActiveListeners int
 }
