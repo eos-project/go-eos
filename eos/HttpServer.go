@@ -74,15 +74,14 @@ func (l *WebsocketListener) accept() {
 			filter := cmdChunk[3]
 			hash := cmdChunk[4]
 
-			httpLog.Infoc(
-				"Received websocket auth for realm :realm with nonce :nonce filter :filter signed with :hash",
+			httpLog.With(
 				map[string]interface{}{
 					"realm":  realm,
 					"nonce":  nonce,
 					"filter": filter,
 					"hash":   hash,
 				},
-			)
+			).Info("Received websocket auth for realm :realm with nonce :nonce filter :filter signed with :hash")
 
 			// Registering
 			l.ws.WriteMessage(websocket.TextMessage, []byte("connected"))
@@ -131,7 +130,8 @@ func (h *HttpServer) Start() error {
 		return err
 	}
 
-	httpLog.Infoc("Starting HTTP server on :addr", map[string]interface{}{"addr": h.addr})
+	httpLog.Context["addr"] = h.addr
+	httpLog.Info("Starting HTTP server on :addr")
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", h.wsHandler)
 	if h.stats != nil {

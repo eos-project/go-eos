@@ -13,16 +13,18 @@ import (
 
 func main() {
 	serverLog := log.Context.WithTags("eos")
-	log.Dispatcher.FromCli()
+	log.Autoconfig("eos")
 
-	serverLog.Infoc("Starting EOS server with pid :pid", map[string]interface{}{"pid": os.Getpid()})
+	serverLog.Context["pid"] = os.Getpid()
+	serverLog.Info("Starting EOS server with pid :pid")
 
 	// Loading configuration file
 	confFile, err := cf.NewConfigFile("eos.json", true)
 	if err != nil {
 		panic(serverLog.Fail(err))
 	}
-	serverLog.Infoc("Using config at :full", map[string]interface{}{"full": confFile.FullPath})
+	serverLog.Context["full"] = confFile.FullPath
+	serverLog.Info("Using config at :full")
 
 	var mainConfig struct {
 		Timer  int
@@ -57,17 +59,14 @@ func main() {
 			rps := float32(stats.UdpPackets.Value-last) / float32(mainConfig.Timer)
 			last = stats.UdpPackets.Value
 
-			serverLog.Debugc(
-				"Goroutines :gor, Udp served :us (:rps RPS) - :uec - :uep - :uea",
-				map[string]interface{}{
-					"gor": runtime.NumGoroutine(),
-					"rps": rps,
-					"us":  stats.UdpPackets.Value,
-					"uec": stats.UdpErrorConn.Value,
-					"uep": stats.UdpErrorParse.Value,
-					"uea": stats.UdpErrorAuth.Value,
-				},
-			)
+			serverLog.Context["gor"] = runtime.NumGoroutine()
+			serverLog.Context["rps"] = rps
+			serverLog.Context["us"] = stats.UdpPackets.Value
+			serverLog.Context["uec"] = stats.UdpErrorConn.Value
+			serverLog.Context["uep"] = stats.UdpErrorParse.Value
+			serverLog.Context["uea"] = stats.UdpErrorAuth.Value
+
+			serverLog.Debug("Goroutines :gor, Udp served :us (:rps RPS) - Conn err: :uec - Parse err: :uep - Auth err: :uea")
 		}
 	}()
 
@@ -75,7 +74,7 @@ func main() {
 	auth := eos.NewHashMapIdentities()
 	for k, v := range mainConfig.Realms {
 		auth.Add(k, v)
-		serverLog.Debugc("Added identity :name", map[string]interface{}{"name": k})
+		serverLog.Debug("Added identity: " + k)
 	}
 
 	// Building dispatcher
@@ -112,12 +111,11 @@ func main() {
 	done := make(chan bool)
 	go func() {
 		sig := <-c
-		serverLog.Warnc(
-			"Received signal :sig, shutting down gracefully. Dispatch list contains :count funcs",
-			map[string]interface{}{"sig": sig.String(), "count": len(sigDispatchList)},
-		)
-		for i, f := range sigDispatchList {
-			serverLog.Infoc("Running signal dispatcher # :ii", map[string]interface{}{"ii": i})
+		serverLog.Context["sig"] = sig.String()
+		serverLog.Context["dc"] = len(sigDispatchList)
+		serverLog.Warn("Received signal :sig, shutting down gracefully. Dispatch list contains :dc funcs")
+		for _, f := range sigDispatchList {
+			serverLog.Info("Running signal dispatcher")
 			f()
 		}
 		serverLog.Info("Done with dispatchers")
@@ -158,5 +156,6 @@ func main() {
 	dispatcher.Register(eos.NoopMessage)
 
 	<-done
+	log.Dispatcher.Wait()
 	os.Exit(1)
 }

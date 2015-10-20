@@ -63,14 +63,10 @@ func NewUdpServer(cnf UdpServerConfiguration) (*UdpServer, error) {
 func (u *UdpServer) Start() error {
 	var err error
 
-	udpLog.Infoc(
-		"Lisening UDP at :addr, max packet size :mpsize, incoming buffer size :ibsize",
-		map[string]interface{}{
-			"addr":   u.config.Address,
-			"mpsize": u.config.PacketSize,
-			"ibsize": u.config.BufferSize,
-		},
-	)
+	udpLog.Context["addr"] = u.config.Address
+	udpLog.Context["mpsize"] = u.config.PacketSize
+	udpLog.Context["ibsize"] = u.config.BufferSize
+	udpLog.Info("Lisening UDP at :addr, max packet size :mpsize, incoming buffer size :ibsize")
 
 	u.socket, err = net.ListenUDP("udp", u.address)
 	if err != nil {
@@ -112,6 +108,12 @@ func (u *UdpServer) accept(packet string) {
 	nonce := chunks[0]
 	signature := chunks[1]
 	keyString := chunks[2]
+
+	if i := strings.Index(signature, "+"); i != -1 {
+		// Realm in signature
+		keyString = signature[0:i+1] + keyString
+		signature = signature[i+1:]
+	}
 
 	// Resolving key
 	key, err := u.config.ParseKey(keyString)

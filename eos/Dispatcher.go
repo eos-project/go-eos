@@ -29,11 +29,12 @@ func (d *Dispatcher) Register(f func(Message)) {
 	node.next = d.first
 	d.first = node
 	go d.StatCount(d.count)
-	Log.Infoc("New listener added to dispatcher, total is :total", map[string]interface{}{"total": d.count})
+
+	Log.Context["total"] = d.count
+	Log.Info("New listener added to dispatcher, total is :total")
 
 	// Dumping all
 	x := d.first
-	fmt.Println("REG")
 	for x != nil {
 		fmt.Printf("  %+v %+v\n", x.f, f)
 
@@ -77,7 +78,9 @@ func (d *Dispatcher) Unregister(f func(Message)) {
 		}
 	}
 	go d.StatCount(d.count)
-	Log.Infoc("Listener removed from dispatcher, total is :total", map[string]interface{}{"total": d.count})
+
+	Log.Context["total"] = d.count
+	Log.Info("Listener removed from dispatcher, total is :total")
 }
 
 func (d *Dispatcher) Send(message Message) {
