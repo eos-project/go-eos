@@ -1,5 +1,5 @@
 # Development
-idea/
+.idea/
 *.swp
 
 # Binaries & runtime
