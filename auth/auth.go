@@ -1,30 +1,28 @@
-package eos
+package auth
 
 import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"github.com/eos-project/go-eos/model"
 )
 
-/// Named type for hash map identities
+// Named type for hash map identities
 type HashMapIdentities map[string]string
 
-/// Constructs new hash map identities object
+// Constructs new hash map identities object
 func NewHashMapIdentities() HashMapIdentities {
-	var x HashMapIdentities
-
-	x = map[string]string{}
-	return x
+	return map[string]string{}
 }
 
-/// Adds new auth data
+// Adds new auth data
 func (ids HashMapIdentities) Add(realm string, secret string) {
 	ids[realm] = secret
 }
 
-/// Authenticates packet
-/// Returns nil on success, error otherwise
-func (ids HashMapIdentities) AuthenticatePacket(p Packet) error {
+// Authenticates packet
+// Returns nil on success, error otherwise
+func (ids HashMapIdentities) AuthenticatePacket(p model.Packet) error {
 	if _, ok := ids[p.Realm]; !ok {
 		return fmt.Errorf("Realm %s not known", p.Realm)
 	}

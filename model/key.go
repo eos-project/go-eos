@@ -1,11 +1,11 @@
-package eos
+package model
 
 import (
 	"strconv"
 )
 
-/// EOS key structure
-type EosKey struct {
+// EOS key structure
+type Key struct {
 	Realm    string
 	Schema   string
 	Tags     []string
@@ -14,8 +14,8 @@ type EosKey struct {
 	HashCode uint32
 }
 
-/// Returns true if EosKey has requested tag
-func (k *EosKey) HasTag(tag string) bool {
+// Returns true if EosKey has requested tag
+func (k *Key) HasTag(tag string) bool {
 	for _, v := range k.Tags {
 		if v == tag {
 			return true
@@ -25,6 +25,7 @@ func (k *EosKey) HasTag(tag string) bool {
 	return false
 }
 
-func (k *EosKey) String() string {
+// Returns string representation of eos key
+func (k Key) String() string {
 	return k.Fqn + " (" + strconv.FormatUint(uint64(k.HashCode), 16) + ")"
 }

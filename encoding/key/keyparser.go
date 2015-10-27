@@ -1,7 +1,8 @@
-package eos
+package key
 
 import (
 	"fmt"
+	"github.com/eos-project/go-eos/model"
 	"hash/fnv"
 	"regexp"
 	"sort"
@@ -10,7 +11,8 @@ import (
 
 var keyParserRegex = regexp.MustCompile("^([a-z0-9\\-_]*)\\+([a-z\\-]*)://(.+)")
 
-func ParseKey(addr string) (*EosKey, error) {
+// Parses string into EosKey structure
+func ParseKey(addr string) (*model.Key, error) {
 	matches := keyParserRegex.FindStringSubmatch(addr)
 
 	if len(matches) != 4 {
@@ -20,10 +22,11 @@ func ParseKey(addr string) (*EosKey, error) {
 	tags := strings.Split(strings.ToLower(matches[3]), ":")
 	sort.Strings(tags)
 
-	key := EosKey{}
-	key.Realm = matches[1]
-	key.Schema = matches[2]
-	key.Tags = tags
+	key := model.Key{
+		Realm:  matches[1],
+		Schema: matches[2],
+		Tags:   tags,
+	}
 	key.Path = key.Schema + "://" + strings.Join(key.Tags, ":")
 	key.Fqn = key.Realm + "+" + key.Path
 

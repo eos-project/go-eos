@@ -1,4 +1,4 @@
-package eos
+package server
 
 import (
 	"sync/atomic"

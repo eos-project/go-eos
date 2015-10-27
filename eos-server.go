@@ -1,7 +1,10 @@
 package main
 
 import (
-	"github.com/eos-project/go-eos/eos"
+	"github.com/eos-project/go-eos/auth"
+	"github.com/eos-project/go-eos/net/udp"
+	"github.com/eos-project/go-eos/net/ws"
+	"github.com/eos-project/go-eos/server"
 	cf "github.com/gotterdemarung/go-configfile"
 	"github.com/gotterdemarung/go-log/log"
 	"os"
@@ -49,7 +52,7 @@ func main() {
 	}
 
 	// Building stats
-	stats := eos.RuntimeStatistics{}
+	stats := server.RuntimeStatistics{}
 	statsTicker := time.NewTicker(time.Duration(mainConfig.Timer) * time.Second)
 	go func() {
 		var last int64
@@ -71,25 +74,24 @@ func main() {
 	}()
 
 	// Building authenticator
-	auth := eos.NewHashMapIdentities()
+	auths := auth.NewHashMapIdentities()
 	for k, v := range mainConfig.Realms {
-		auth.Add(k, v)
+		auths.Add(k, v)
 		serverLog.Debug("Added identity: " + k)
 	}
 
 	// Building dispatcher
-	dispatcher := eos.Dispatcher{
+	dispatcher := server.Dispatcher{
 		StatCount: func(value int) {
 			stats.ActiveListeners = value
 		},
 	}
 
 	// UdpConfig
-	udpConf := eos.UdpServerConfiguration{
+	udpConf := udp.Config{
 		Address: mainConfig.Udp.Address,
 
-		ParseKey:     eos.ParseKey,
-		Authenticate: auth.AuthenticatePacket,
+		Authenticate: auths.AuthenticatePacket,
 		Send:         dispatcher.Send,
 
 		BufferSize: mainConfig.Udp.BufferSize,
@@ -99,6 +101,12 @@ func main() {
 		StatErrorAuth:    stats.UdpErrorAuth.Inc,
 		StatErrorConnect: stats.UdpErrorConn.Inc,
 		StatErrorParse:   stats.UdpErrorParse.Inc,
+	}
+
+	// wsConfig
+	wsConfig := ws.Config{
+		Address:    mainConfig.Http.Address,
+		Dispatcher: &dispatcher,
 	}
 
 	// Signals dispatchering
@@ -125,35 +133,23 @@ func main() {
 
 	// Building and starting UDP listener
 	if mainConfig.Udp.Enabled {
-		udp, err := eos.NewUdpServer(udpConf)
+		stopper, err := udp.StartListening(udpConf)
 		if err != nil {
 			serverLog.Fail(err)
 			panic(err)
 		}
-		err = udp.Start()
-		if err != nil {
-			serverLog.Fail(err)
-			panic(err)
-		}
-		sigDispatchList = append(sigDispatchList, udp.Stop)
+		sigDispatchList = append(sigDispatchList, stopper)
 	}
 
 	// Building and starting HTTP server
 	if mainConfig.Http.Enabled {
-		hs := eos.NewHttpServer(mainConfig.Http.Address, &dispatcher)
-		if mainConfig.Http.Stats {
-			hs.WithStats(&stats)
-		}
-		err := hs.Start()
+		stopper, err := ws.StartListening(wsConfig)
 		if err != nil {
 			serverLog.Fail(err)
 			panic(err)
 		}
-		sigDispatchList = append(sigDispatchList, hs.Stop)
+		sigDispatchList = append(sigDispatchList, stopper)
 	}
-
-	// Add demo listener
-	dispatcher.Register(eos.NoopMessage)
 
 	<-done
 	log.Dispatcher.Wait()
