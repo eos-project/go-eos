@@ -22,12 +22,7 @@ func main() {
 	serverLog.Info("Starting EOS server with pid :pid")
 
 	// Loading configuration file
-	confFile, err := cf.NewConfigFile("eos.json", true)
-	if err != nil {
-		panic(serverLog.Fail(err))
-	}
-	serverLog.Context["full"] = confFile.FullPath
-	serverLog.Info("Using config at :full")
+	configReader := cf.ConfigReader{}
 
 	var mainConfig struct {
 		Timer  int
@@ -45,7 +40,7 @@ func main() {
 		}
 	}
 
-	err = confFile.DecodeJson(&mainConfig)
+	err := configReader.ReadJson("eos.json", &mainConfig)
 	if err != nil {
 		serverLog.Warn("Unable to read configuration file")
 		panic(serverLog.Fail(err))
